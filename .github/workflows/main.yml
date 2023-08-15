@@ -1,48 +1,38 @@
-on: [push, workflow_dispatch]
-
-name: CI
+name: PDF Action
+run-name: Markdown to PDF
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - src/**
+      - styles/**
+      - template/**
+      - Dockerfile
+      - docker-compose.yaml
+      - package-lock.json
+      - package.json
+  workflow_dispatch:
 
 jobs:
   build-docker-container:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout
+        uses: actions/checkout@v3
       
+      - name: Get TAG
+        id: get-tag
+        run: |
+          T=$(echo "$GITHUB_REF" | sed -n 's|refs/tags/||p')
+          echo "::set-output name=tag::${T:-latest}"
+
       - name: Build the docker image
         run: |
-          export TAG=${GITHUB_SHA:0:8}
-          echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          docker-compose -f docker-compose.yaml build
-        if: github.ref == 'refs/heads/master' || contains(github.ref,'bdc_')
-        env:
-          DOCKER_USERNAME: ${{ github.repository }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TAG="${{ steps.get-tag.outputs.tag }}" docker-compose build
 
-      - name: branch Push Docker image to github package registry
+      - name: Push Docker image
         run: |
-          export TAG=${GITHUB_SHA:0:8}
-          echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          docker-compose -f docker-compose.yaml push
-        if: github.ref == 'refs/heads/master' || contains(github.ref,'bdc_')
-        env:
-          DOCKER_USERNAME: ${{ github.repository }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build the docker image with latest tag
-        run: |
-          echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          docker-compose -f docker-compose.yaml build
-        if: github.ref == 'refs/heads/master'
-        env:
-          DOCKER_USERNAME: ${{ github.repository }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: branch Push Docker image to github package registry with latest tag
-        run: |
-          echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          docker-compose -f docker-compose.yaml push
-        if: github.ref == 'refs/heads/master'
-        env:
-          DOCKER_USERNAME: ${{ github.repository }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository }}" --password-stdin
+          TAG="${{ steps.get-tag.outputs.tag }}" docker-compose push
