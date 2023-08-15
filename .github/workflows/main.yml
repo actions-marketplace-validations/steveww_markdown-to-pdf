@@ -12,6 +12,8 @@ on:
       - docker-compose.yaml
       - package-lock.json
       - package.json
+    tags:
+      - v*
   workflow_dispatch:
 
 jobs:
