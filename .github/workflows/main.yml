@@ -17,6 +17,7 @@ on:
 jobs:
   build-docker-container:
     runs-on: ubuntu-latest
+    permissions: write-all
     timeout-minutes: 15
     steps:
       - name: Checkout
