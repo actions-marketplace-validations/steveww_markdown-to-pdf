@@ -3,7 +3,7 @@ name: 'MD2PDF'
 description: 'Creates PDF and HTML files from Markdown using the GitHub (or custom) theme.'
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'ghcr.io/steveww/markdown-to-pdf'
 
 inputs:
   input_path:
